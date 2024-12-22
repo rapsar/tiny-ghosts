@@ -9,7 +9,7 @@ In 2023, Cheryl Mollohan and Ron Day pioneered the use of low-light trail camera
 Trail cameras capture flashes surprisingly well, but they produce thousands of pictures which then need to be classified (flash/no flash). 
 
 ## Purpose
-tiny-ghosts is a project for automatic detection of flashes in trail cameras pictures using computer vision.
+`tiny-ghosts` is a project for automated detection of firefly flashes in trail cameras images using computer vision.
 In this context, finding which pictures show firefly flashes is not an easy task.
 The pictures have low contrast, show a complex background, with uneven and changing illumination (moon, lightning), and various kinds of hotspots and artifacts (headlights).
 
@@ -37,7 +37,7 @@ It performs reasonably well to identify patches, although not as well as 4o.
 It is free and runs on a MacBook Pro M2.
 
 ### Blob detection + CNN classification
-Based on [firefleye-net](https://github.com/rapsar/firefl-eye-net). 
+Based on [`firefleye-net`](https://github.com/rapsar/firefl-eye-net). 
 Coming soon.
 
 ## Installation
