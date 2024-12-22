@@ -1,0 +1,19 @@
+# Ignore macOS system files
+.DS_Store
+
+# Ignore log files
+*.log
+
+# Ignore Python cache files
+__pycache__/
+*.pyc
+
+# Ignore environment and config files
+.env
+.vscode/
+
+# Ignore virtual environments
+tgenv/
+
+# Ignore private folder
+private/

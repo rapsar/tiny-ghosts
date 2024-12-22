@@ -1,0 +1,18 @@
+Image: /Users/rss367/Documents/projects/fireflies-trail-cameras/data/MS02/20230702/DSCF0001.JPG
+Patch: res-MS02-0702-p4/temp/_patch_4_0.JPG
+Output: no.
+Token: 'No', Probability: 0.999970
+Token: 'Yes', Probability: 0.000028
+
+Image: /Users/rss367/Documents/projects/fireflies-trail-cameras/data/MS02/20230702/DSCF0001.JPG
+Patch: res-MS02-0702-p4/temp/_patch_4_1.JPG
+Output: no.
+Token: 'No', Probability: 0.999451
+Token: 'Yes', Probability: 0.000261
+
+Image: /Users/rss367/Documents/projects/fireflies-trail-cameras/data/MS02/20230702/DSCF0001.JPG
+Patch: res-MS02-0702-p4/temp/_patch_4_2.JPG
+Output: no.
+Token: 'No', Probability: 0.999906
+Token: 'Yes', Probability: 0.000075
+
