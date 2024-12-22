@@ -32,14 +32,13 @@ A downside of this approach is the non-negligible cost: over $5 for 1000 picture
 I'm investigating using the logits/softmax value to adapt the threshold of positive/negative, possibly away from p = 0.5.
 
 #### Llava
-Llava is a vision model based on Llama. 
+[Llava](https://llava-vl.github.io) is a vision model based on Llama. 
 It performs reasonably well to identify patches, although not as well as 4o. 
 It is free and runs on a MacBook Pro M2.
 
-### Edge detection + NN classification
-Edge Detection + NN classification
-Based on the principles of 
-To be continued.
+### Blob detection + CNN classification
+Based on [firefleye-net](https://github.com/rapsar/firefl-eye-net). 
+Coming soon.
 
 ## Installation
 1. Clone this repo: `git clone https://github.com/your-username/tiny-ghosts.git`
