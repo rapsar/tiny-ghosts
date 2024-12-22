@@ -31,6 +31,10 @@ A downside of this approach is the non-negligible cost: over $5 for 1000 picture
 
 I'm investigating using the logits/softmax value to adapt the threshold of positive/negative, possibly away from p = 0.5.
 
+- `tg-vis-gpt.py` processes a full folder of images with 4o; sorts flash/night
+- `tg-vis-gpt-test.py` processes a single images, print results in console; for testing
+- `tg-dat-gpt.py` reads date/time/temperature from image banner and concatenate into .csv
+
 #### Llava
 [Llava](https://llava-vl.github.io) is a vision model based on Llama. 
 It performs reasonably well to identify patches, although not as well as 4o. 
