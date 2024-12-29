@@ -17,3 +17,7 @@ tgenv/
 
 # Ignore private folder
 private/
+
+#Ignore data and results
+data/
+results/
