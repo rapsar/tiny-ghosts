@@ -1,18 +1,20 @@
-'''
+"""
 Firefly Flash Detection - Single Image Test Script
 
-This script allows testing firefly flash detection on a single image. It crops the image
-into patches based on the selected patch mode, classifies the patches using an AI model,
-and outputs the classification results directly to the console.
+This script allows testing firefly flash detection on a single image.
+It preprocesses the image using a separate module (tg_gpt_preprocess_image.py)
+that crops, enhances, and splits the image into patches (returned as PIL.Image objects).
+Each patch is then temporarily saved and classified using an AI model.
+Classification results and token probabilities are output directly to the console.
 
 Features:
-- Supports multiple patch modes: full image, two-patch split, bottom crop with resizing, or eight-patch split.
+- Supports multiple patch modes: full image, two-patch split, bottom crop with resizing, four-patch (top or bottom), or eight-patch split.
 - Outputs classification results and token probabilities for each patch.
-- Suitable for testing and debugging model performance on individual images.
+- Uses a modular preprocessing function from tg_gpt_preprocess_image.py.
 
 Usage:
-  python test_image_classification.py --input <image_path> --patch <patch_mode> --model <model_name>
-'''
+  python tg-vis-gpt-test.py --input <image_path> --patch <patch_mode> --model <model_name>
+"""
 
 import os
 import base64
@@ -20,38 +22,63 @@ import argparse
 from PIL import Image
 from openai import OpenAI
 import math
-from PIL import ImageFilter
+
+# Import the new preprocess_image function from the separate module.
+from tg_gpt_preprocess_image import preprocess_image
 
 # Initialize OpenAI client
 client = OpenAI()
 
-# Function to encode the image
 def encode_image(image_path):
+    """
+    Encodes the image from a file to a base64 string.
+    """
     with open(image_path, "rb") as image_file:
         return base64.b64encode(image_file.read()).decode("utf-8")
 
-# Function to classify the image using OpenAI API
 def classify_image(image_path, model="gpt-4o"):
+    """
+    Classifies the image using the OpenAI API.
+    Returns the response text and top token probabilities.
+    """
+    prompt = "Answer only by yes or no: do you see any firefly flashes in this image? (watch very carefully)"
+    
     base64_image = encode_image(image_path)
+    
+    detail = "low"
+    
+    temperature=0
+    seed = 39 # non effective (for now 02/2025 -- might change in the future)
+    top_p=0.1
+    logprobs=True
+    top_logprobs=2
 
     try:
         response = client.chat.completions.create(
             model=model,
-            temperature=0.01,
-            top_p=0.1,
-            logprobs=True,
-            top_logprobs=2,
+            temperature=temperature,
+            seed=seed,
+            top_p=top_p,
+            logprobs=logprobs,
+            top_logprobs=top_logprobs,
             messages=[
+                    {
+        "role": "system",
+        "content": ""
+                    },
                 {
                     "role": "user",
                     "content": [
                         {
                             "type": "text",
-                            "text": "Answer only by yes or no: do you see any firefly flashes in this image? (watch very carefully)"
+                            "text": prompt
                         },
                         {
                             "type": "image_url",
-                            "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}
+                            "image_url": {
+                                "url": f"data:image/jpeg;base64,{base64_image}",
+                                "detail": detail
+                                }
                         }
                     ]
                 }
@@ -60,80 +87,22 @@ def classify_image(image_path, model="gpt-4o"):
 
         # Extract the response text
         response_text = response.choices[0].message.content.strip().lower()
-
-        # Display top 2 tokens and probabilities for the first token of the output
+        print(f"prompt_tokens: {response.usage.prompt_tokens}")
+        print(f"system_fingerprint: {response.system_fingerprint}")
+        # Extract token information
         logprobs_content = response.choices[0].logprobs.content
         top_token_info = []
-        for idx, token_logprob in enumerate(logprobs_content[:1], start=1):
-            top_two = token_logprob.top_logprobs[:2]
-            for top in top_two:
+        for token_logprob in logprobs_content[:1]:
+            for top in token_logprob.top_logprobs[:2]:
                 token = top.token
                 logprob = top.logprob
-                probability = math.exp(logprob)  # Convert logprob to probability
+                probability = math.exp(logprob)  # Convert log probability to probability
                 top_token_info.append((token, probability))
 
         return response_text, top_token_info
     except Exception as e:
-        # Handle errors from OpenAI API
         print(f"OpenAI API error: {e}")
         return "error", []
-
-# Function to crop the image based on the --patch argument
-def crop_image(image_path, patch_mode):
-    with Image.open(image_path) as img:
-        width, height = img.size
-
-        # Calculate the top margin to achieve a final height of 1280
-        crop_height = 1280
-        bottom_margin = 140
-        top_margin = height - crop_height - bottom_margin
-
-        # Crop the top and bottom to get 1280x2560
-        cropped_img = img.crop((0, top_margin, width, height - bottom_margin))
-
-        if patch_mode == 1:
-            # Return the full image
-            return [cropped_img]
-
-        elif patch_mode == 2:
-            # Resize to 512x1024 and split into two 512x512 patches
-            resized_img = cropped_img.resize((1024, 512), Image.LANCZOS)
-            #resized_img = cropped_img.resize((1024, 512), Image.LANCZOS).filter(ImageFilter.UnsharpMask(radius=1, percent=80, threshold=0))
-
-            left_patch = resized_img.crop((0, 0, 512, 512))
-            right_patch = resized_img.crop((512, 0, 1024, 512))
-
-            return [left_patch, right_patch]
-        
-        elif patch_mode == 4:
-            # Crop the top 660 pixels, keeping only the bottom 640x2560
-            bottom_cropped_img = cropped_img.crop((0, 660, width, 1280))
-
-            # Resize to 512x2048 (factor 0.8)
-            resized_img = bottom_cropped_img.resize((2048, 512), Image.LANCZOS)
-
-            # Split into four 512x512 patches
-            patches = []
-            for i in range(4):
-                patch = resized_img.crop((i * 512, 0, (i + 1) * 512, 512))
-                patches.append(patch)
-
-            return patches
-
-        elif patch_mode == 8:
-            # Resize to 1024x2048 and split into eight 512x512 patches
-            resized_img = cropped_img.resize((2048, 1024), Image.LANCZOS)
-
-            patches = []
-            for i in range(1, -1, -1):
-                for j in range(4):
-                    patch = resized_img.crop((j * 512, i * 512, (j + 1) * 512, (i + 1) * 512))
-                    patches.append(patch)
-
-            return patches
-
-        else:
-            raise ValueError("Invalid patch mode. Must be 1, 2, or 8.")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Classify a single test image for firefly flash detection.")
@@ -143,25 +112,36 @@ if __name__ == "__main__":
         "gpt-4o-2024-11-20",
         "gpt-4o-2024-08-06",
         "gpt-4o-2024-05-13",
-        "gpt-4o-mini"
+        "gpt-4o-mini",
+        #"o1-mini",
+        #"o3-mini"
     ], help="Model to use for classification (default: gpt-4o).")
-    parser.add_argument("--patch", type=int, default=2, choices=[1, 2, 4, 8], help="Patch mode: 1 (full image), 2 (two 512x512 patches), 4 (four 512x512 patches from resized bottom crop), or 8 (eight 512x512 patches). Default is 2.")
+    parser.add_argument("--patch", type=str, default="2", choices=["1", "2", "4d", "4u", "8"],
+                        help="Patch mode: '1' (full image), '2' (two 512x512 patches), '4d' (four 512x512 patches from bottom crop), '4u' (four 512x512 patches from top crop), or '8' (eight 512x512 patches). Default is '2'.")
+    parser.add_argument("--kernel_diameter", "-kd", type=int, default=1, help="Kernel diameter for dilation (default: 1).")
+    parser.add_argument("--contrast_factor", "-cf", type=float, default=1, help="Contrast enhancement factor (default: 1).")
     args = parser.parse_args()
 
-    # Crop the image into patches based on patch_mode
-    patches = crop_image(args.input, args.patch)
+    # Preprocess the image to obtain patches (as PIL.Image objects)
+    patches = preprocess_image(
+        file_path=args.input,
+        patch_mode=args.patch,
+        kernel_diameter=args.kernel_diameter,
+        contrast_factor=args.contrast_factor
+    )
 
+    # Process each patch: save it temporarily, classify it, print the results, and remove the temporary file.
     for idx, patch in enumerate(patches):
-        # Save patch to temporary memory and classify
-        patch_path = f"temp_patch_{idx}.jpg"
-        patch.save(patch_path)
-        result, top_token_info = classify_image(patch_path, model=args.model)
+        temp_patch_path = f"temp_patch_{idx}.jpg"
+        patch.save(temp_patch_path)
+        patch.show()
+        result, top_token_info = classify_image(temp_patch_path, model=args.model)
 
         print(f"Patch {idx + 1}:")
         print(f"Output: {result}")
         for token, probability in top_token_info:
-            print(f"Token: '{token}', Probability: {probability:.6f}")
+            print(f"Token: '{token}', Probability: {probability:.2f}")
         print("-----------------------------")
 
         # Remove the temporary patch file
-        os.remove(patch_path)
+        os.remove(temp_patch_path)

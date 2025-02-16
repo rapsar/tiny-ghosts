@@ -93,13 +93,13 @@ def crop_image(image_path, temp_dir, patch_mode):
         # Crop the top and bottom to get 1280x2560
         cropped_img = img.crop((0, top_margin, width, height - bottom_margin))
 
-        if patch_mode == 1:
+        if patch_mode == "1":
             # Save the full image
             full_patch_path = os.path.join(temp_dir, "_full-patch.JPG")
             cropped_img.save(full_patch_path)
             return [full_patch_path]
 
-        elif patch_mode == 2:
+        elif patch_mode == "2":
             # Resize to 512x1024 and split into two 512x512 patches
             resized_img = cropped_img.resize((1024, 512), Image.LANCZOS)
 
@@ -114,9 +114,9 @@ def crop_image(image_path, temp_dir, patch_mode):
 
             return [left_patch_path, right_patch_path]
 
-        elif patch_mode == 4:
-            # Crop the top 660 pixels, keeping only the bottom 640x2560
-            bottom_cropped_img = cropped_img.crop((0, 660, width, 1280))
+        elif patch_mode == "4d":
+            # Crop the top 640 pixels, keeping only the bottom 640x2560
+            bottom_cropped_img = cropped_img.crop((0, 640, width, 1280))
 
             # Resize to 512x2048 (factor 0.8)
             resized_img = bottom_cropped_img.resize((2048, 512), Image.LANCZOS)
@@ -130,8 +130,25 @@ def crop_image(image_path, temp_dir, patch_mode):
                 patch_paths.append(patch_path)
 
             return patch_paths
+        
+        elif patch_mode == "4u":
+            # Crop the top 640 pixels
+            top_cropped_img = cropped_img.crop((0, 0, width, 640))
 
-        elif patch_mode == 8:
+            # Resize to 512x2048 (factor 0.8)
+            resized_img = top_cropped_img.resize((2048, 512), Image.LANCZOS)
+
+            # Split into four 512x512 patches
+            patch_paths = []
+            for i in range(4):
+                patch = resized_img.crop((i * 512, 0, (i + 1) * 512, 512))
+                patch_path = os.path.join(temp_dir, f"_patch_4_{i}.JPG")
+                patch.save(patch_path)
+                patch_paths.append(patch_path)
+
+            return patch_paths
+
+        elif patch_mode == "8":
             # Resize to 1024x2048 and split into eight 512x512 patches
             resized_img = cropped_img.resize((2048, 1024), Image.LANCZOS)
 
@@ -146,7 +163,7 @@ def crop_image(image_path, temp_dir, patch_mode):
             return patch_paths
 
         else:
-            raise ValueError("Invalid patch mode. Must be 1, 2, 4, or 8.")
+            raise ValueError("Invalid patch mode. Must be 1, 2, 4u, 4d, or 8.")
 
 # Function to process images in a folder
 def process_images(input_folder, output_folder, model, patch_mode, nonight):
@@ -256,7 +273,12 @@ if __name__ == "__main__":
             "gpt-4o-2024-05-13",
             "gpt-4o-mini"
         ], help="Model to use for classification (default: gpt-4o).")
-        parser.add_argument("--patch", type=int, default=2, choices=[1, 2, 4, 8], help="Patch mode: 1 (full image), 2 (two 512x512 patches), 4 (four 512x512 patches from resized bottom crop), or 8 (eight 512x512 patches). Default is 2.")
+        #parser.add_argument("--patch", type=int, default=2, choices=[1, 2, 4, 8], help="Patch mode: 1 (full image), 2 (two 512x512 patches), 4 (four 512x512 patches from resized bottom crop), or 8 (eight 512x512 patches). Default is 2.")
+        parser.add_argument("--patch", type=str, default="2", choices=["1", "2", "4d", "4u", "8"],
+                    help="Patch mode: 1 (full image), 2 (two 512x512 patches), "
+                         "4d (four 512x512 patches from resized bottom crop), "
+                         "4u (four 512x512 patches from resized top crop), "
+                         "or 8 (eight 512x512 patches). Default is 2.")
         parser.add_argument("--nonight", action="store_true", help="Do not copy images classified as 'night' to the output folder.")
         args = parser.parse_args()
 

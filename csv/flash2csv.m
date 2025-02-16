@@ -1,6 +1,6 @@
 function [imageData,imageName] = flash2csv(flashFolder,outputname)
-%FLASH2CSV reads metadata for flash images and write into a .csv
-% Temperature in Celsius in recorded in the 'MakerNote' field
+%FLASH2CSV reads metadata for flash images and write into a .csv or .txt
+% Temperature in Celsius is recorded in the 'MakerNote' field
 
 % parameters
 imagePattern = 'DSCF*.JPG';

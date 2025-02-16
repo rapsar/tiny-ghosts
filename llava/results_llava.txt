@@ -1,0 +1,144 @@
+Image: /Users/rss367/Desktop/2024bwp/results/LEC_Cam07_Part1/dusk/DSCF0001.JPG
+Patch: patch_001_0_0.JPG
+Output: image encoded in  1313.00 ms by CLIP (    2.28 ms per image patch)
+
+ No
+
+Image: /Users/rss367/Desktop/2024bwp/results/LEC_Cam07_Part1/dusk/DSCF0001.JPG
+Patch: patch_001_0_1.JPG
+Output: image encoded in   926.96 ms by CLIP (    1.61 ms per image patch)
+
+ No
+
+Image: /Users/rss367/Desktop/2024bwp/results/LEC_Cam07_Part1/dusk/DSCF0001.JPG
+Patch: patch_001_1_0.JPG
+Output: image encoded in   919.24 ms by CLIP (    1.60 ms per image patch)
+
+ No
+
+Image: /Users/rss367/Desktop/2024bwp/results/LEC_Cam07_Part1/dusk/DSCF0001.JPG
+Patch: patch_001_1_1.JPG
+Output: image encoded in  1113.98 ms by CLIP (    1.93 ms per image patch)
+
+ Yes
+
+Image: /Users/rss367/Desktop/2024bwp/results/LEC_Cam07_Part1/dusk/DSCF0002.JPG
+Patch: patch_002_0_0.JPG
+Output: image encoded in   940.15 ms by CLIP (    1.63 ms per image patch)
+
+ No
+
+Image: /Users/rss367/Desktop/2024bwp/results/LEC_Cam07_Part1/dusk/DSCF0002.JPG
+Patch: patch_002_0_1.JPG
+Output: image encoded in   893.48 ms by CLIP (    1.55 ms per image patch)
+
+ No
+
+Image: /Users/rss367/Desktop/2024bwp/results/LEC_Cam07_Part1/dusk/DSCF0002.JPG
+Patch: patch_002_1_0.JPG
+Output: image encoded in  1186.94 ms by CLIP (    2.06 ms per image patch)
+
+ No
+
+Image: /Users/rss367/Desktop/2024bwp/results/LEC_Cam07_Part1/dusk/DSCF0002.JPG
+Patch: patch_002_1_1.JPG
+Output: image encoded in  1171.05 ms by CLIP (    2.03 ms per image patch)
+
+ Yes
+
+Image: /Users/rss367/Desktop/2024bwp/results/LEC_Cam07_Part1/dusk/DSCF0003.JPG
+Patch: patch_003_0_0.JPG
+Output: image encoded in   950.11 ms by CLIP (    1.65 ms per image patch)
+
+ No
+
+Image: /Users/rss367/Desktop/2024bwp/results/LEC_Cam07_Part1/dusk/DSCF0003.JPG
+Patch: patch_003_0_1.JPG
+Output: image encoded in   924.93 ms by CLIP (    1.61 ms per image patch)
+
+ No
+
+Image: /Users/rss367/Desktop/2024bwp/results/LEC_Cam07_Part1/dusk/DSCF0003.JPG
+Patch: patch_003_1_0.JPG
+Output: image encoded in   894.23 ms by CLIP (    1.55 ms per image patch)
+
+ No
+
+Image: /Users/rss367/Desktop/2024bwp/results/LEC_Cam07_Part1/dusk/DSCF0003.JPG
+Patch: patch_003_1_1.JPG
+Output: image encoded in  1177.72 ms by CLIP (    2.04 ms per image patch)
+
+ Yes
+
+Image: /Users/rss367/Desktop/2024bwp/results/LEC_Cam07_Part1/dusk/DSCF0004.JPG
+Patch: patch_004_0_0.JPG
+Output: image encoded in  1077.06 ms by CLIP (    1.87 ms per image patch)
+
+ No
+
+Image: /Users/rss367/Desktop/2024bwp/results/LEC_Cam07_Part1/dusk/DSCF0004.JPG
+Patch: patch_004_0_1.JPG
+Output: image encoded in   950.77 ms by CLIP (    1.65 ms per image patch)
+
+ No
+
+Image: /Users/rss367/Desktop/2024bwp/results/LEC_Cam07_Part1/dusk/DSCF0004.JPG
+Patch: patch_004_1_0.JPG
+Output: image encoded in   967.58 ms by CLIP (    1.68 ms per image patch)
+
+ No
+
+Image: /Users/rss367/Desktop/2024bwp/results/LEC_Cam07_Part1/dusk/DSCF0004.JPG
+Patch: patch_004_1_1.JPG
+Output: image encoded in   918.15 ms by CLIP (    1.59 ms per image patch)
+
+ No
+
+Image: /Users/rss367/Desktop/2024bwp/results/LEC_Cam07_Part1/dusk/DSCF0004.JPG
+Patch: patch_004_2_0.JPG
+Output: image encoded in   966.06 ms by CLIP (    1.68 ms per image patch)
+
+ No
+
+Image: /Users/rss367/Desktop/2024bwp/results/LEC_Cam07_Part1/dusk/DSCF0004.JPG
+Patch: patch_004_2_1.JPG
+Output: image encoded in  1016.37 ms by CLIP (    1.76 ms per image patch)
+
+ Yes
+
+Image: /Users/rss367/Desktop/2024bwp/results/LEC_Cam07_Part1/dusk/DSCF0005.JPG
+Patch: patch_005_0_0.JPG
+Output: image encoded in   950.08 ms by CLIP (    1.65 ms per image patch)
+
+ No
+
+Image: /Users/rss367/Desktop/2024bwp/results/LEC_Cam07_Part1/dusk/DSCF0005.JPG
+Patch: patch_005_0_1.JPG
+Output: image encoded in  1017.47 ms by CLIP (    1.77 ms per image patch)
+
+ No
+
+Image: /Users/rss367/Desktop/2024bwp/results/LEC_Cam07_Part1/dusk/DSCF0005.JPG
+Patch: patch_005_1_0.JPG
+Output: image encoded in   986.13 ms by CLIP (    1.71 ms per image patch)
+
+ No
+
+Image: /Users/rss367/Desktop/2024bwp/results/LEC_Cam07_Part1/dusk/DSCF0005.JPG
+Patch: patch_005_1_1.JPG
+Output: image encoded in   946.70 ms by CLIP (    1.64 ms per image patch)
+
+ No
+
+Image: /Users/rss367/Desktop/2024bwp/results/LEC_Cam07_Part1/dusk/DSCF0005.JPG
+Patch: patch_005_2_0.JPG
+Output: image encoded in  1035.57 ms by CLIP (    1.80 ms per image patch)
+
+ No
+
+Image: /Users/rss367/Desktop/2024bwp/results/LEC_Cam07_Part1/dusk/DSCF0005.JPG
+Patch: patch_005_2_1.JPG
+Output: image encoded in   947.81 ms by CLIP (    1.65 ms per image patch)
+
+ Yes
+
