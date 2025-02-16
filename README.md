@@ -2,11 +2,12 @@
 The American West is known for its deserts and canyons, but is also rich in biodiversity. 
 Its inhabitants include fireflies. :bug::sparkles:
 
-Western firefly populations are small and sparse, and little is known about them. 
+Western firefly populations are small and sparse.
+Little is known about them. 
 They often reside in remote areas (springs, arroyos, etc.) where access is limited, making their study and monitoring cumbersome.
 
 In 2023, Cheryl Mollohan and Ron Day pioneered the use of low-light trail cameras to monitor firefly populations in Arizona over several weeks. 
-Trail cameras capture flashes surprisingly well, but they produce thousands of pictures which then need to be classified (flash/no flash). 
+Trail cameras capture flashes surprisingly well but produce thousands of pictures which then need to be classified (flash/no flash). 
 
 ## Purpose
 `tiny-ghosts` is a project for automated detection of firefly flashes in trail cameras images using computer vision.
@@ -18,10 +19,10 @@ The pictures have low contrast, show a complex background, with uneven and chang
 ## Approaches
 I am trying two main approaches:
 1. Traditional image binarization followed by neural network classification;
-2. Use of multimodal LLMs.
+2. Use of multimodal LLMs and visiona language models (VLM).
 
-### Vision Models
-The past two years have seen the emergence of pretrained multimodal LLMs, which excel at a variety of tasks.
+### Vision Language Models
+The past couple years have seen the emergence of pretrained multimodal LLMs, which excel at a variety of tasks.
 It turns out they are also pretty good at identifying fireflies.
 
 #### GPT-4o
@@ -40,11 +41,13 @@ I'm investigating using the logits/softmax value to adapt the threshold of posit
 It performs reasonably well to identify patches, although not as well as 4o. 
 It is free and runs on a MacBook Pro M2.
 
+#### Deepseek
+I am testing the newer VLMs from Deepseek, especially Janus and VL2.
+
 ### Blob detection + CNN classification
 Based on [`firefleye-net`](https://github.com/rapsar/firefl-eye-net). 
 Coming soon.
 
-## Installation
-1. Clone this repo: `git clone https://github.com/your-username/tiny-ghosts.git`
-2. Set up the virtual environment: `tgenv`
-3. Run the main script to process images.
+## To-Do
+- set up a benchmark for VLM performance of firefly detection tasks
+
