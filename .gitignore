@@ -21,3 +21,4 @@ private/
 #Ignore data and results
 data/
 results/
+pre/deprecated/

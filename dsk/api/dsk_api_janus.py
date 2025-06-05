@@ -35,7 +35,7 @@ def dsk_api_janus(prompt, image_path, client=None):
     model = "deepseek-ai/Janus-Pro-7B"
     if client is None:
         client = Client(model, hf_token=HF_TOKEN)
-    
+
     # Call the API using the provided parameters.
     result = client.predict(
         image=handle_file(image_path),

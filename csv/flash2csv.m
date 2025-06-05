@@ -3,7 +3,8 @@ function [imageData,imageName] = flash2csv(flashFolder,outputname)
 % Temperature in Celsius is recorded in the 'MakerNote' field
 
 % parameters
-imagePattern = 'DSCF*.JPG';
+%imagePattern = 'DSCF*.JPG';
+imagePattern = '*.JPG';
 temperaturePattern = 'tempture';
 csvHeader = ["Filename","Year","Month","Day","Hour","Minute","Second","TemperatureC","TemperatureF"];
 

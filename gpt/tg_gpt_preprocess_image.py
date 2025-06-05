@@ -86,7 +86,9 @@ def split_into_patches(image, patch_mode):
     width, height = image.size
 
     if patch_mode == "1":
-        return [image]
+        # Resize full image to 1024x512 before returning
+        resized_img = image.resize((1024, 512), Image.LANCZOS)
+        return [resized_img]
 
     elif patch_mode == "2":
         # Resize to 1024x512 and split into two 512x512 patches

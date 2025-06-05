@@ -152,6 +152,47 @@ def save_extracted_image(answer_str, output_folder, file_name):
         print("No base64 image found in the answer.")
     return False
 
+def resolve_previous_errors(args, prompt_question):
+    log_file_path = os.path.join(args.output, "log.txt")
+    if os.path.exists(log_file_path):
+        with open(log_file_path, "r") as log_file:
+            lines = log_file.readlines()
+            error_files = []
+            for line in lines:
+                match = re.match(r"^(\d{8}T\d+_DSCF\d+\.JPG):\s+Error", line)
+                if match:
+                    error_files.append(match.group(1).strip())
+
+        if error_files:
+            with open(log_file_path, "a") as log_file:
+                log_file.write("\nReprocessing previously failed files...\n")
+                log_file.write("=" * 50 + "\n")
+
+            for file_name in error_files:
+                date_folder = file_name.split("T")[0]
+                original_file_path = os.path.join(args.input, date_folder, file_name)
+                try:
+                    preprocessed_file_path = preprocess_image(original_file_path, args.kernel_diameter, args.contrast_factor)
+                    print(f"Reprocessing {preprocessed_file_path}...")
+
+                    client = Client("deepseek-ai/Janus-Pro-7B", hf_token=HF_TOKEN)
+
+                    if args.model == "vl2sm":
+                        predict_result = dsk_api_vl2sm(prompt_question, preprocessed_file_path, client)
+                        process_predict_result_vl2sm(predict_result, file_name, original_file_path, args.output, log_file_path)
+                    elif args.model == "janus":
+                        predict_result = dsk_api_janus(prompt_question, preprocessed_file_path, client)
+                        process_predict_result_janus(predict_result, file_name, original_file_path, args.output, log_file_path)
+
+                except Exception as e:
+                    print(f"Retry failed for {file_name}: {e}")
+                    with open(log_file_path, "a") as log_file:
+                        log_file.write(f"{file_name}: Retry Error - {e}\n")
+        else:
+            print("No error files found to retry.")
+    else:
+        print(f"No log.txt found in {args.output}. Cannot resolve errors.")
+
 def main(input_folder, output_folder, model_option, kernel_diameter, contrast_factor, prompt_question):
     # Set model_used based on the provided model option.
     if model_option == "janus":
@@ -171,56 +212,93 @@ def main(input_folder, output_folder, model_option, kernel_diameter, contrast_fa
     
     # Log file path.
     log_file_path = os.path.join(output_folder, "log.txt")
+    processed_files = set()
+    
+    # Check if log.txt exists. If it does, append a timestamp and parse processed filenames.
+    if os.path.exists(log_file_path):
+        with open(log_file_path, "a") as log_file:
+            log_file.write("\nRun started at " + time.strftime("%Y-%m-%d %H:%M:%S") + "\n")
+            log_file.write(f"Input Folder: {input_folder}\n")
+            log_file.write("=" * 50 + "\n")
+        # Read the file to determine which files have been processed already.
+        with open(log_file_path, "r") as log_file:
+            for line in log_file:
+                # Assuming processed lines are in the format: "filename.jpg: <result>"
+                m = re.match(r'^(.+\.jpg):', line, re.IGNORECASE)
+                if m:
+                    processed_files.add(m.group(1).strip())
+    else:
+        # Create a new log file with header info.
+        with open(log_file_path, "w") as log_file:
+            log_file.write(f"Model: {model_used}\n")
+            log_file.write(f"Input Folder: {input_folder}\n")
+            log_file.write(f"Prompt: {prompt_question}\n")
+            log_file.write(f"Kernel Diameter: {kernel_diameter}\n")
+            log_file.write(f"Contrast Factor: {contrast_factor}\n")
+            #log_file.write(f"Seed: {seed}\n")
+            #log_file.write(f"Temperature: {temperature}\n")
+            log_file.write("Run started at " + time.strftime("%Y-%m-%d %H:%M:%S") + "\n")
+            log_file.write("=" * 50 + "\n")
     
     # Initialize the Gradio client.
     client = Client(model_used, hf_token=HF_TOKEN)
     
-    # Write header info into the log.
-    with open(log_file_path, "w") as log_file:
-        log_file.write(f"Model: {model_used}\n")
-        log_file.write(f"Input Folder: {input_folder}\n")
-        log_file.write(f"Prompt: {prompt_question}\n")
-        log_file.write(f"Kernel Diameter: {kernel_diameter}\n")
-        log_file.write(f"Contrast Factor: {contrast_factor}\n")
-        #log_file.write(f"Seed: {seed}\n")
-        #log_file.write(f"Temperature: {temperature}\n")
-        log_file.write("=" * 50 + "\n")
+    # # Write header info into the log.
+    # with open(log_file_path, "w") as log_file:
+    #     log_file.write(f"Model: {model_used}\n")
+    #     log_file.write(f"Input Folder: {input_folder}\n")
+    #     log_file.write(f"Prompt: {prompt_question}\n")
+    #     log_file.write(f"Kernel Diameter: {kernel_diameter}\n")
+    #     log_file.write(f"Contrast Factor: {contrast_factor}\n")
+    #     #log_file.write(f"Seed: {seed}\n")
+    #     #log_file.write(f"Temperature: {temperature}\n")
+    #     log_file.write("=" * 50 + "\n")
     
     # Process .JPG files in alphabetical order.
-    for file_name in sorted(os.listdir(input_folder))[120:]:
+    for file_name in sorted(os.listdir(input_folder))[:]:
         if file_name.lower().endswith('.jpg'):
+            
+            # Skip file if it's already been processed.
+            if file_name in processed_files:
+                continue
+            
             original_file_path = os.path.join(input_folder, file_name)
-            print(f"Processing {original_file_path}...")
+            # print(f"Processing {original_file_path}...")
+            time.sleep(1)
             try:
                 # Preprocess the image.
                 preprocessed_file_path = preprocess_image(original_file_path, kernel_diameter, contrast_factor)
-            
-                # Retry loop for handling GPU quota errors.
+                print(preprocessed_file_path)
+                # Retry loop for handling API errors, up to 5 attempts.
+                retry_count = 0
                 success = False
-                while not success:
+                while not success and retry_count < 10:
                     try:
                         if model_option == "vl2sm":
                             # Call the external API function for vl2sm.
                             predict_result = dsk_api_vl2sm(prompt_question, preprocessed_file_path, client)
                             # Process the prediction result.
-                            process_predict_result(predict_result, file_name, original_file_path, output_folder, log_file_path)
-                    
+                            process_predict_result_vl2sm(predict_result, file_name, original_file_path, output_folder, log_file_path)
                         elif model_option == "janus":
                             # Call the external API function for Janus.
-                            predict_result = dsk_api_janus(prompt_question, preprocessed_file_path, client)
+                            predict_result = dsk_api_janus(prompt_question, preprocessed_file_path, client) #add client if done with freezing issues, or remove client if persists
                             # Process the Janus-specific result.
                             process_predict_result_janus(predict_result, file_name, original_file_path, output_folder, log_file_path)
-                    
                         success = True  # API call succeeded.
                     except Exception as e:
+                        retry_count += 1
                         err_msg = str(e)
                         if "exceeded your Pro GPU quota" in err_msg:
                             print("GPU quota exceeded. Sleeping for 1 hour before retrying...")
                             print(time.strftime('%Y-%m-%d %H:%M:%S'))
                             time.sleep(3600)
                         else:
-                            # Propagate any other errors.
-                            raise               
+                            print(f"Error on attempt {retry_count} for {file_name}: {e}")
+                            time.sleep(2)
+                            if retry_count >= 10:
+                                raise
+                if not success:
+                    raise Exception(f"Failed after 10 retries for file {file_name}")
             except Exception as e:
                 print(f"Error processing {file_name}: {e}")
                 with open(log_file_path, "a") as log_file:
@@ -238,9 +316,10 @@ if __name__ == "__main__":
         parser.add_argument("--input", "-i", required=True, help="Path to the input folder containing .JPG files.")
         parser.add_argument("--output", "-o", required=True, help="Path to the output folder to save images and logs.")
         parser.add_argument("--model", "-m", choices=["janus", "vl2sm"], default="janus", help="Model: deepseek-ai/Janus-Pro-7B or deepseek-ai/deepseek-vl2-small.")
-        parser.add_argument("--kernel_diameter", "-kd", type=int, default=7, help="Diameter of the morphological kernel. Default is 7. Set to 1 for no dilatation.")
+        parser.add_argument("--kernel_diameter", "-kd", type=int, default=5, help="Diameter of the morphological kernel. Default is 5. Set to 1 for no dilatation.")
         parser.add_argument("--contrast_factor", "-cf", type=float, default=1.5, help="Contrast enhancement factor. Default is 1.5. Set to 1 for no modification.")
         parser.add_argument("--vg", action="store_true", help="If specified, wrap 'firefly flash' with visual grounding tags.")
+        parser.add_argument("--resolve_errors", action="store_true", help="Retry processing files that previously failed with errors.")
         args = parser.parse_args()
         
         # Define your initial prompt.
@@ -252,6 +331,14 @@ if __name__ == "__main__":
                 return re.sub(r"(firefly flash)", r"<|ref|>\1<|/ref|>", prompt, flags=re.IGNORECASE)
             prompt_question = apply_vg_tags(prompt_question)
 
-        main(args.input, args.output, args.kernel_diameter, args.contrast_factor, prompt_question)
+        # Reprocess files with errors
+        if args.resolve_errors:
+            resolve_previous_errors(args,prompt_question)
+            exit(0)
+
+        main(args.input, args.output, args.model, args.kernel_diameter, args.contrast_factor, prompt_question)
     finally:
         caffeinate_process.terminate()
+        
+        
+    

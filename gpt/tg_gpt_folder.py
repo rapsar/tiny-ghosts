@@ -4,17 +4,21 @@ Firefly Flash Detection Script
 This script processes images for firefly flash detection by splitting them into patches,
 classifying them using an AI model, and saving the results in structured logs.
 Depending on the patch mode, images are cropped and resized to generate patches, which are then
-classified as either containing a flash ("yes") or not ("no").
+classified as containing a flash ("yes") or not ("no").
+
+Key changes:
+- The `--nonight` flag has been removed; night images are now symlinked into the 'night' folder by default.
+- If the input folder contains only subdirectories, each subfolder is processed separately into matching output subfolders.
 
 Features:
-- Supports multiple patch modes: full image, two-patch split, bottom crop with resizing,
-  four-patch (top or bottom), or eight-patch split.
-- Saves classification results in JSON and text log files.
-- Organizes images into folders based on classification (e.g., flash, night).
-- Optionally prevents night images from being copied to the output folder.
+- Supports multiple patch modes: full image, two-patch split, bottom/top crops, or eight-patch split.
+- Saves classification results in both JSON and text log files.
+- Organizes images into 'flash' (copied), 'night' (symlinked), 'temp', and 'positive-patches'.
 
 Usage:
-  python tg-vis-gpt.py --input <input_folder> --output <output_folder> --patch <patch_mode> --model <model_name>
+  python tg_gpt_folder.py --input <input_folder> --output <output_folder> \
+         [--model <model_name>] [--patch <patch_mode>] [--kernel_diameter N] \
+         [--contrast_factor F] [--detail <low|high>] [--sensitivity S]
 '''
 
 import os
@@ -26,6 +30,7 @@ from PIL import Image
 from openai import OpenAI
 import math
 import subprocess
+import time
 
 # Import the new preprocess_image function from the separate module.
 from tg_gpt_preprocess_image import preprocess_image
@@ -97,7 +102,7 @@ def classify_image(image_path, model="gpt-4o", detail="high"):
         print(f"OpenAI API error: {e}")
         return "error", []
 
-def process_images(input_folder, output_folder, model, patch_mode, nonight, kernel_diameter, contrast_factor, detail, sensitivity):
+def process_images(input_folder, output_folder, model, patch_mode, kernel_diameter, contrast_factor, detail, sensitivity, master_input=None):
     """
     Processes all JPG images in the input folder.
     For each image, the new preprocess_image function (which returns PIL.Image patches) is called.
@@ -105,14 +110,22 @@ def process_images(input_folder, output_folder, model, patch_mode, nonight, kern
     based on the classification output.
     """
     flash_folder = os.path.join(output_folder, 'flash')
-    night_folder = os.path.join(output_folder, 'night')
     temp_folder = os.path.join(output_folder, 'temp')
     positive_patches_folder = os.path.join(output_folder, 'positive-patches')
     json_log_path = os.path.join(output_folder, f"results_{os.path.basename(input_folder)}.json")
 
+    # Determine night-folder, placing subfolder symlinks under output/night/<subfolder>
+    if master_input:
+        rel = os.path.relpath(input_folder, master_input)
+        if rel == '.':
+            night_folder = os.path.join(output_folder, 'night')
+        else:
+            night_folder = os.path.join(output_folder, 'night', rel)
+    else:
+        night_folder = os.path.join(output_folder, 'night')
+
     os.makedirs(flash_folder, exist_ok=True)
-    if not nonight:
-        os.makedirs(night_folder, exist_ok=True)
+    os.makedirs(night_folder, exist_ok=True)
     os.makedirs(temp_folder, exist_ok=True)
     os.makedirs(positive_patches_folder, exist_ok=True)
 
@@ -123,9 +136,10 @@ def process_images(input_folder, output_folder, model, patch_mode, nonight, kern
 
     input_folder_name = os.path.basename(input_folder)
     log_file_path = os.path.join(output_folder, f"results_{input_folder_name}.txt")
-    
-    # Write header to log file with parameter values
-    with open(log_file_path, "w") as log_file:
+
+    # Append a run header with timestamp to avoid overwriting existing logs
+    with open(log_file_path, "a") as log_file:
+        log_file.write("\nRun started at " + time.strftime("%Y-%m-%d %H:%M:%S") + "\n")
         log_file.write(f"Model: {model}\n")
         log_file.write(f"Detail: {detail}\n")
         log_file.write(f"Sensitivity: {sensitivity}\n")
@@ -136,7 +150,17 @@ def process_images(input_folder, output_folder, model, patch_mode, nonight, kern
     with open(log_file_path, "a") as log_file:
         # Process JPG files that match the naming pattern.
         filenames = sorted([f for f in os.listdir(input_folder)
-                            if f.lower().endswith('.jpg') and f.startswith('DSCF')])
+                            if f.lower().endswith('.jpg') ]) #and f.startswith('20')])
+        # Skip images already processed (in flash or night folders)
+        processed = set()
+        # Images copied to flash
+        for f in os.listdir(flash_folder):
+            processed.add(f)
+        # Images symlinked to night
+        for f in os.listdir(night_folder):
+            processed.add(f)
+        # Only process new images
+        filenames = [f for f in filenames if f not in processed]
         for filename in filenames:
             image_path = os.path.join(input_folder, filename)
             try:
@@ -144,7 +168,7 @@ def process_images(input_folder, output_folder, model, patch_mode, nonight, kern
                 patches = preprocess_image(file_path=image_path, patch_mode=patch_mode,
                                            kernel_diameter=kernel_diameter,
                                            contrast_factor=contrast_factor)
-                destination_folder = night_folder if not nonight else None
+                destination_folder = night_folder
                 image_entry = {"image_path": image_path, "patches": []}
 
                 positive_found = False
@@ -199,17 +223,30 @@ def process_images(input_folder, output_folder, model, patch_mode, nonight, kern
                     json_file.seek(0)
                     json.dump(data, json_file, indent=4)
 
-                # Copy the original image to the appropriate folder based on classification.
-                if destination_folder:
-                    try:
+                # Copy or symlink the original image to the appropriate folder based on classification.
+                try:
+                    if destination_folder == night_folder:
+                        # Use symlink for night images.
+                        symlink_path = os.path.join(destination_folder, filename)
+                        if not os.path.exists(symlink_path):
+                            os.symlink(os.path.abspath(image_path), symlink_path)
+                        print(f"Symlinked {filename} to {destination_folder}")
+                    else:
                         shutil.copy(image_path, destination_folder)
                         print(f"Copied {filename} to {destination_folder}")
-                    except Exception as e:
-                        print(f"Error copying image {filename}: {e}")
-                        log_file.write(f"Image: {image_path}\nError copying file: {e}\n\n")
+                except Exception as e:
+                    print(f"Error copying/symlinking image {filename}: {e}")
+                    log_file.write(f"Image: {image_path}\nError copying/symlinking file: {e}\n\n")
             except Exception as e:
                 print(f"Error processing image {image_path}: {e}")
                 log_file.write(f"Image: {image_path}\nError: {e}\n\n")
+
+    # Clean up temp folder when done
+    try:
+        shutil.rmtree(temp_folder)
+        print(f"Removed temp folder: {temp_folder}")
+    except Exception as e:
+        print(f"Error removing temp folder {temp_folder}: {e}")
 
 if __name__ == "__main__":
     # Prevent system sleep.
@@ -223,22 +260,60 @@ if __name__ == "__main__":
             "gpt-4o-2024-11-20",
             "gpt-4o-2024-08-06",
             "gpt-4o-2024-05-13",
-            "gpt-4o-mini"
+            "gpt-4o-mini",
+            "gpt-4.1",
+            "gpt-4.1-mini",
+            "gpt-4.1-nano"
         ], help="Model to use for classification (default: gpt-4o).")
         parser.add_argument("--patch", type=str, default="2", choices=["1", "2", "4d", "4u", "8"],
                             help="Patch mode: '1' (full image), '2' (two 512x512 patches), "
                                  "'4d' (four 512x512 patches from resized bottom crop), "
                                  "'4u' (four 512x512 patches from resized top crop), "
                                  "or '8' (eight 512x512 patches). Default is '2'.")
-        parser.add_argument("--nonight", action="store_true", help="Do not copy images classified as 'night' to the output folder.")
+        # --nonight removed
         parser.add_argument("--kernel_diameter", "-kd", type=int, default=3, help="Kernel diameter for dilation (default: 3).")
         parser.add_argument("--contrast_factor", "-cf", type=float, default=1.5, help="Contrast enhancement factor (default: 1.5).")
         parser.add_argument("--detail", type=str, default="high", choices=["low", "high"], help="Pass image as low (85 tokens) or high detail.")
         parser.add_argument("--sensitivity", type=float, default=0.5, help="Probability threshold for classifying a patch as positive (default: 0.5).")
         args = parser.parse_args()
 
-        process_images(args.input, args.output, args.model, args.patch, args.nonight,
-                       kernel_diameter=args.kernel_diameter, contrast_factor=args.contrast_factor, 
-                       detail=args.detail, sensitivity=args.sensitivity)
+        # If no JPEG files at top level, process each subfolder separately
+        top_jpg = [f for f in os.listdir(args.input) if f.lower().endswith('.jpg')]
+        if not top_jpg:
+            # Determine global flash folder for skip logic
+            flash_folder = os.path.join(args.output, 'flash')
+            for sub in sorted(os.listdir(args.input)):
+                sub_input = os.path.join(args.input, sub)
+                if os.path.isdir(sub_input):
+                    # Skip entire subfolder if all images already processed
+                    input_files = [f for f in os.listdir(sub_input) if f.lower().endswith('.jpg')]
+                    night_subfolder = os.path.join(args.output, 'night', sub)
+                    existing = set()
+                    if os.path.exists(night_subfolder):
+                        existing.update(os.listdir(night_subfolder))
+                    if os.path.exists(flash_folder):
+                        existing.update([f for f in os.listdir(flash_folder) if f in input_files])
+                    if set(input_files).issubset(existing):
+                        print(f"Skipping already processed folder: {sub_input}")
+                        continue
+                    process_images(
+                        sub_input, args.output, args.model, args.patch,
+                        kernel_diameter=args.kernel_diameter,
+                        contrast_factor=args.contrast_factor,
+                        detail=args.detail,
+                        sensitivity=args.sensitivity,
+                        master_input=args.input
+                    )
+        else:
+            process_images(
+                args.input, args.output, args.model, args.patch,
+                kernel_diameter=args.kernel_diameter,
+                contrast_factor=args.contrast_factor,
+                detail=args.detail,
+                sensitivity=args.sensitivity,
+                master_input=args.input
+            )
     finally:
         caffeinate_process.terminate()  # Stop caffeinate when done.
+        
+# python tg_gpt_folder.py --model "gpt-4.1-mini" --input /Users/rss367/Desktop/2024bww/Muleshoe/results/UpperBass/dusk --output /Users/rss367/Desktop/2024bww/Muleshoe/results/UpperBass/dusk/_41mini

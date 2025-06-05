@@ -113,6 +113,7 @@ if __name__ == "__main__":
         "gpt-4o-2024-08-06",
         "gpt-4o-2024-05-13",
         "gpt-4o-mini",
+        "gpt-4.5-preview",
         #"o1-mini",
         #"o3-mini"
     ], help="Model to use for classification (default: gpt-4o).")
