@@ -56,13 +56,21 @@ See `dsk/` folder
 
 ### Post processing
 Once images have been processed, it is advised to use the `post/verif-eye.py` GUI to manually check if positive pictures are true positives.
-Aftwerwards, running `xlsx_export.py` will extract metadata from all psoitive pictures and put the data in a spreasheet.
+Aftwerwards, running `xlsx_report.py` will extract metadata from all psoitive pictures and put the data in a spreasheet.
 
-### Blob detection + CNN classification
-Based on [`firefleye-net`](https://github.com/rapsar/firefl-eye-net). 
-Coming soon.
+## Evals
+To evaluate VLMs' performance, I use two approaches
+
+### Comparison with ground truth
+Comparing VLMs classification with human-labelled image sets. Coming soon.
+
+### Needle in a haystack
+I use synthetic data of a bright blob on a dark background and change the location of the blob.
+Surpringly, models have significant blind spots in parts of an image. 
+Results coming soon in `evals/haystack/`
 
 ## To-Do
+- blob detection + CNN classification, based on [`firefleye-net`](https://github.com/rapsar/firefl-eye-net)
 - set up a benchmark for VLM performance of firefly detection tasks
 - resolve the problem of stars/planes, which look very much alike flashes
 
